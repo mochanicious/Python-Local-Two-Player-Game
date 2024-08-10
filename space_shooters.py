@@ -55,3 +55,5 @@ def draw_window():
     pygame.draw.rect(WIN, (0, 0, 0), BORDER)
 
     pygame.display.update()
+
+
