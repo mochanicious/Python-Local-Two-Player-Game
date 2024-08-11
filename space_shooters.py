@@ -50,10 +50,117 @@ WATER = pygame.transform.scale(pygame.image.load("water.png"), (WIDTH, HEIGHT))
 AGAIN = pygame.transform.scale(pygame.image.load("again.png"), (WIDTH, HEIGHT))
 
 # Function to draw the game window
-def draw_window():
+def draw_window(one, two, countdown):
     WIN.blit(SPACE, (0, 0))
     pygame.draw.rect(WIN, (0, 0, 0), BORDER)
 
+    WIN.blit(ONE_SHIP, (one.x, one.y))
+    WIN.blit(TWO_SHIP, (two.x, two.y))
+
     pygame.display.update()
 
+# Function to handle movement of player one
+def one_movement(keys_press, one):
+    if keys_press[pygame.K_a] and one.x - VEL > 0 - 25: # LEFT
+        one.x -= VEL
+    if keys_press[pygame.K_d] and one.x + VEL + one.width < BORDER.x + 15: # RIGHT
+        one.x += VEL
+    if keys_press[pygame.K_s] and one.y + VEL + one.height < HEIGHT + 15: # DOWN
+        one.y += VEL
+    if keys_press[pygame.K_w] and one.y - VEL > 0 - 5: # UP
+        one.y -= VEL
+
+# Function to handle movement of player two
+def two_movement(keys_press, two): 
+        if keys_press[pygame.K_LEFT] and two.x - VEL > BORDER.x + BORDER.width - 15: #LEFT
+            two.x -= VEL
+        if keys_press[pygame.K_RIGHT] and two.x + VEL + two.width < WIDTH + 20: #RIGHT
+            two.x += VEL
+        if keys_press[pygame.K_DOWN] and two.y + VEL + two.height < HEIGHT + 15: #DOWN
+            two.y += VEL
+        if keys_press[pygame.K_UP] and two.y - VEL > 0 - 5: #UP
+            two.y -= VEL
+
+# Function to draw the winner on the screen
+def draw_winner(text):
+    if text == "Player Wins!" or text == "Enemy Wins!":
+        WIN.blit(SKY, (0, 0))
+        draw_text = WINNER_FONT.render(text, 1, (255, 255, 255))
+        WIN.blit(draw_text, (WIDTH//2 - draw_text.get_width()//2, HEIGHT//2 - draw_text.get_height()//2))
+        WINNER_SOUND.play()
+        pygame.display.update()
+        pygame.time.delay(5000)
+    else:
+        WIN.blit(WATER, (0, 0))
+        draw_text = WINNER_FONT.render(text, 1, (255, 255, 255))
+        WIN.blit(draw_text, (WIDTH//2 - draw_text.get_width()//2, HEIGHT//2 - draw_text.get_height()//2))
+        WAHH.play()
+        pygame.display.update()
+        pygame.time.delay(5000)
+
+# Function to display the play again screen
+def play_again_screen():
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    MUSIC.stop()
+                    return True
+
+        WIN.blit(AGAIN, (0, 0))
+        MUSIC.play()
+        play_again_text = WINNER_FONT.render("Play Again? (Press Enter)", 1, (255, 255, 255))
+        WIN.blit(play_again_text, (WIDTH // 2 - play_again_text.get_width() // 2, HEIGHT // 2 - play_again_text.get_height() // 2))
+        pygame.display.update() 
+
+# Main game function
+def main():
+    one = pygame.Rect(100, 300, SPACE_H, SPACE_W)
+    two = pygame.Rect(700, 300, SPACE_H, SPACE_W)
+
+    clock = pygame.time.Clock()
+    countdown = 5
+    countdown_time = pygame.time.get_ticks() + 45000
+    run = True
+    while run:
+        clock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+
+
+        winner_text = ""
+        if countdown <= 0:
+            winner_text = "Draw!"
+
+        if winner_text != "":
+            draw_winner(winner_text)
+            if not play_again_screen():
+                break
+            else:
+                one = pygame.Rect(100, 300, SPACE_H, SPACE_W)
+                two = pygame.Rect(700, 300, SPACE_H, SPACE_W)
+                countdown = 5
+                countdown_time = pygame.time.get_ticks() + 45000
+                continue
+        current_time = pygame.time.get_ticks()
+        if countdown_time > current_time:
+            countdown = (countdown_time - current_time) // 1000  # Calculate the remaining countdown time in seconds
+        else:
+            countdown = 0 
+
+        keys_press = pygame.key.get_pressed()
+        one_movement(keys_press, one)      
+        two_movement(keys_press, two)  
+
+
+        draw_window(one, two, countdown)
+
+# Execute the main function
+if __name__ == "__main__":
+    main()
 
