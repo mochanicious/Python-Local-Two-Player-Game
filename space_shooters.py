@@ -50,12 +50,26 @@ WATER = pygame.transform.scale(pygame.image.load("water.png"), (WIDTH, HEIGHT))
 AGAIN = pygame.transform.scale(pygame.image.load("again.png"), (WIDTH, HEIGHT))
 
 # Function to draw the game window
-def draw_window(one, two, countdown):
+def draw_window(one, two, one_bullets, two_bullets, two_health, one_health, countdown):
     WIN.blit(SPACE, (0, 0))
     pygame.draw.rect(WIN, (0, 0, 0), BORDER)
+    
+    two_health_text = HEALTH_FONT.render("Health: " + str(two_health), 1, (255, 255, 255))
+    one_health_text = HEALTH_FONT.render("Health: " + str(one_health), 1, (255, 255, 255))
+    WIN.blit(two_health_text, (WIDTH - two_health_text.get_width() - 10, 10))
+    WIN.blit(one_health_text, (10, 10))
 
+    countdown_text = HEALTH_FONT.render("Countdown: " + str(countdown), 1, (255, 255, 255))
+    WIN.blit(countdown_text, (WIDTH - countdown_text.get_width() - 10, HEIGHT - countdown_text.get_height() - 10))
+    
     WIN.blit(ONE_SHIP, (one.x, one.y))
     WIN.blit(TWO_SHIP, (two.x, two.y))
+
+    for bullet in two_bullets:
+        pygame.draw.rect(WIN, (255, 0, 255), bullet)
+
+    for bullet in one_bullets:
+        pygame.draw.rect(WIN, (255, 165, 0), bullet)
 
     pygame.display.update()
 
@@ -80,6 +94,23 @@ def two_movement(keys_press, two):
             two.y += VEL
         if keys_press[pygame.K_UP] and two.y - VEL > 0 - 5: #UP
             two.y -= VEL
+
+# Function to handle bullets
+def handle_bullets(one_bullets, two_bullets, one, two):
+    for bullet in one_bullets:
+        bullet.x += B_VEL
+        if two.colliderect(bullet):
+            pygame.event.post(pygame.event.Event(TWO_HIT))
+            one_bullets.remove(bullet)
+        elif bullet.x > WIDTH:
+            one_bullets.remove(bullet)
+    for bullet in two_bullets:
+        bullet.x -= B_VEL
+        if one.colliderect(bullet):
+            pygame.event.post(pygame.event.Event(ONE_HIT))
+            two_bullets.remove(bullet)
+        elif bullet.x < 0:
+            two_bullets.remove(bullet)
 
 # Function to draw the winner on the screen
 def draw_winner(text):
@@ -120,7 +151,10 @@ def play_again_screen():
 def main():
     one = pygame.Rect(100, 300, SPACE_H, SPACE_W)
     two = pygame.Rect(700, 300, SPACE_H, SPACE_W)
-
+    one_bullets = []
+    two_bullets = []
+    one_health = 5
+    two_health = 5
     clock = pygame.time.Clock()
     countdown = 5
     countdown_time = pygame.time.get_ticks() + 45000
@@ -132,8 +166,30 @@ def main():
                 run = False
                 pygame.quit()
 
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LCTRL and len(one_bullets) < AMMO:
+                    bullet = pygame.Rect(one.x + one.width, one.y + one.height//2 - 2, 10, 5)
+                    one_bullets.append(bullet)
+                    BULLET_FIRE_SOUND.play()
+                if event.key == pygame.K_RCTRL and len(two_bullets) < AMMO:
+                    bullet = pygame.Rect(two.x, two.y + two.height//2 - 2, 10, 5)
+                    two_bullets.append(bullet)
+                    BULLET_FIRE_SOUND.play()
+
+            if event.type == TWO_HIT:
+                two_health -= 1
+                BULLET_HIT_SOUND.play()
+            if event.type == ONE_HIT:
+                one_health -= 1
+                BULLET_HIT_SOUND.play()
 
         winner_text = ""
+        if two_health <= 0:
+            winner_text = "Player One Wins!"
+
+        if one_health <= 0:
+            winner_text = "Player Two Wins!"
+
         if countdown <= 0:
             winner_text = "Draw!"
 
@@ -144,6 +200,10 @@ def main():
             else:
                 one = pygame.Rect(100, 300, SPACE_H, SPACE_W)
                 two = pygame.Rect(700, 300, SPACE_H, SPACE_W)
+                one_bullets = []
+                two_bullets = []
+                one_health = 5
+                two_health = 5
                 countdown = 5
                 countdown_time = pygame.time.get_ticks() + 45000
                 continue
@@ -157,10 +217,10 @@ def main():
         one_movement(keys_press, one)      
         two_movement(keys_press, two)  
 
+        handle_bullets(one_bullets, two_bullets, one, two)
 
-        draw_window(one, two, countdown)
+        draw_window(one, two, one_bullets, two_bullets, two_health, one_health, countdown)
 
 # Execute the main function
 if __name__ == "__main__":
     main()
-
